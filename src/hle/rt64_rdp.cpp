@@ -1185,8 +1185,14 @@ namespace RT64 {
         // different modes require adding an extra coordinate. Since this behavior often breaks detection
         // for widescreen hacks, an enhancement option to fix them is available given they're within the
         // tolerance of one pixel from the scissor coordinates.
+        // Snapping to the scissor is wrong once the scissor has been told to
+        // span a wider frame than the rectangles: content drawn beyond the
+        // original frame has rectangles that sit just past the scissor's edge
+        // by coincidence, and pulling them back onto it opens a gap mid frame
+        // rather than closing a sliver at its edge.
         const FixedRect &scissorRect = state->rdp->scissorRectStack[scissorStackSize - 1];
-        const bool fixRectLR = state->ext.enhancementConfig->rect.fixRectLR;
+        const bool fixRectLR = state->ext.enhancementConfig->rect.fixRectLR &&
+                               (extended.global.scissorAspect != G_EX_ASPECT_STRETCH);
         if (!scissorRect.isNull() && fixRectLR) {
             if ((abs(scissorRect.lrx - lrx) <= 4) && (ulx < scissorRect.lrx)) {
                 lrx = scissorRect.lrx;
