@@ -5,6 +5,7 @@
 #include "rt64_inspector.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <iomanip>
 
 #include "im3d/im3d.h"
@@ -75,6 +76,18 @@ namespace RT64 {
         ImGui::CreateContext();
         ImPlot::CreateContext();
         ImGui::StyleColorsDark();
+
+        float inspectorScale = 2.0f;
+        if (const char *scaleOverride = std::getenv("RT64_INSPECTOR_SCALE")) {
+            const float parsed = float(atof(scaleOverride));
+            if (parsed > 0.0f) {
+                inspectorScale = parsed;
+            }
+        }
+        if (inspectorScale != 1.0f) {
+            ImGui::GetIO().FontGlobalScale = inspectorScale;
+            ImGui::GetStyle().ScaleAllSizes(inspectorScale);
+        }
 
         if (sdlWindow != nullptr) {
             ImGui_ImplSDL2_InitForOther(sdlWindow);

@@ -216,6 +216,15 @@ namespace RT64 {
         }
     };
 
+    // LOCAL: candidates are otherwise accepted however far apart they are, so a
+    // room transition, which re-anchors every transform at once, interpolates
+    // every object across the jump. World units.
+    static constexpr float MaxPositionMatchDifference = 200.0f;
+
+    static bool matchWithinThreshold(const TransformMatchResult &result) {
+        return result.valid && result.positionDifference <= MaxPositionMatchDifference;
+    }
+
     TransformMatchResult computeTransformMatch(const hlslpp::float4x4 &curTransform, const hlslpp::float4x4 &curViewProj, const hlslpp::float4x4 &prevTransform, const hlslpp::float4x4 &prevViewProj, const RigidBody *prevRigidBody) {
         TransformMatchResult matchResult;
 
@@ -587,7 +596,7 @@ namespace RT64 {
             prevRigidBody = (firstPrevWorkloadMap != nullptr) ? &firstPrevWorkloadMap->transforms[indices.second].rigidBody : nullptr;
 
             TransformMatchResult matchResult = computeTransformMatch(curTransform, firstCurViewProj, prevTransform, firstPrevViewProj, prevRigidBody);
-            if (matchResult.valid) {
+            if (matchWithinThreshold(matchResult)) {
                 matchCandidates.emplace_back(indices.first, indices.second, matchResult.computeDifference());
             }
         }
@@ -961,7 +970,7 @@ namespace RT64 {
                                 const auto prevMatrix = prevDrawData.worldTransforms[prevTransform];
                                 if (isCallCompatible(curProj.drawCalls[curIt->second], drawData, prevProj.drawCalls[prevIt->second], prevDrawData)) {
                                     const TransformMatchResult matchResult = computeTransformMatch(curMatrix, curViewProj, prevMatrix, prevViewProj, prevFrame.transformMap.transforms[prevTransform].rigidBody);
-                                    if (matchResult.valid) {
+                                    if (matchWithinThreshold(matchResult)) {
                                         matchCandidates.push_back({ curTransform, prevTransform, matchResult.computeDifference() });
                                     }
                                 }
